@@ -20,12 +20,16 @@ void partie(Cellule** tab, int t);
 int main(int argc, char* argv[]){
 
     FILE* fichier;
+    Cellule** tableau;
     char* nomFichier = argv[1];
     char ch_temp[50];
 
     int plateauTaille = 10;
     int nTour = atoi(argv[2]);
+    int xInit, yInit;
 
+
+    //ouverture du fichier txt avec vérification
     if(!(fichier = fopen(nomFichier, "r"))){
         printf("Erreur ouverture fichier\n");
         return 1;
@@ -41,10 +45,9 @@ int main(int argc, char* argv[]){
     }
     
 
-    Cellule** tableau;
+    //initialisation du plateau de jeu
     tableau = (Cellule**)malloc(plateauTaille*sizeof(Cellule*));
 
-    //initialisation du plateau de jeu
     for(int i=0; i<plateauTaille; i++){
         tableau[i] = (Cellule*)malloc(plateauTaille*sizeof(Cellule));
         for(int j=0; j<plateauTaille; j++){
@@ -56,19 +59,31 @@ int main(int argc, char* argv[]){
     }
 
 
-    for(int a=0; a<plateauTaille; a++){
-        for(int b=0; b<plateauTaille; b++){
-            fscanf(fichier, "%d", &tableau[a][b].statut);
+    //initialisation des cellules vivantes à partir d'un fichier txt
+    do{
+        xInit = 0;
+        yInit = 0;
+        fscanf(fichier, "%s", ch_temp);
+        if(strcmp(ch_temp, "FIN_TABLEAU")!=0){
+
+            if(atoi(ch_temp) < plateauTaille){
+                xInit = atoi(ch_temp);
+            }
+
+            fscanf(fichier, "%s", ch_temp);
+            if(atoi(ch_temp) < plateauTaille){
+                yInit = atoi(ch_temp);
+            }
+            
+
+            tableau[xInit][yInit].statut = 1;
         }
-    }
 
-    // tableau[5][4].statut = 1;
-    // tableau[5][5].statut = 1;
-    // tableau[5][6].statut = 1;
-    // tableau[5][7].statut = 1;
+    }while(strcmp(ch_temp, "FIN_TABLEAU")!=0);
 
-    //afficherPlateau(tableau, plateauTaille);
 
+
+    //lancement des tours avec affichage du plateau
     for(int h=0; h<nTour; h++){
         afficherPlateau(tableau, plateauTaille, h);
         partie(tableau, plateauTaille);
@@ -84,6 +99,8 @@ int main(int argc, char* argv[]){
 
     free(tableau);
     tableau = NULL;
+
+    fclose(fichier);
 
     printf("Fin du prog\n");
 
@@ -116,7 +133,9 @@ void afficherPlateau(Cellule** tab, int t, int tour){
 void partie(Cellule** tab, int t){
 
     for(int h=0; h<2; h++){//h=0 compter les voisins, h=1 définir le statut de chaque cellule
-        
+
+        /*Avec une boucle for en plus (h) on évite de refaire 2 boucles for supplémentaires
+        pour repasser dans le tableau*/
 
         for(int k=0; k<t; k++){
             for(int l=0; l<t; l++){
