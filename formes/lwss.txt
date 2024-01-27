@@ -1,4 +1,4 @@
-taille 25
+taille 40
 DEBUT_TABLEAU
 13 10
 13 13

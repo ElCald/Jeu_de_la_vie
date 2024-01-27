@@ -1,4 +1,4 @@
-taille 45
+taille 42
 DEBUT_TABLEAU
 5 29
 6 27
