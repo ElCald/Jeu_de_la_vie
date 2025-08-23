@@ -1,42 +1,44 @@
 #
-# MAIN CONFIGURATION (to configure)
+# MAIN CONFIGURATION
+# Author makefile : Cyril Rabat
 #
 
-EXEC = lifeGame
-OBJECTS = functions.o
-PROJECT_NAME = jeu_de_la_vie
+EXEC = main
+OBJECTS = utiles.o 
+PROJECT_NAME = Jeu de la vie - J.Conway
 
 #
-# SUFFIXES (must not change it)
+# SUFFIXES
 #
 
-.SUFFIXES: .c .o
+.SUFFIXES: .cpp .o
 
 #
-# OBJECTS (must not change it)
+# OBJECTS
 #
 
 EXEC_O = $(EXEC:=.o)
 OBJECTS_O = $(OBJECTS) $(EXEC_O)
 
 #
-# ARGUMENTS AND COMPILER (to configure)
+# ARGUMENTS AND COMPILER
 #
 
-CC = gcc
-CCFLAGS_STD = -Wall -O3 -Werror
+CC = g++
+CCFLAGS_STD = -Wall -Ofast `sdl2-config --cflags` -Iincludes
 CCFLAGS_DEBUG = -D _DEBUG_
 CCFLAGS = $(CCFLAGS_STD)
-CCLIBS = -lncurses
+CCLIBS = -lSDL2 -lSDL2main -lSDL2_ttf 
+
 
 #
-# RULES (must not change it)
+# RULES
 #
 
 all: msg $(OBJECTS) $(EXEC_O)
 	@echo "Create executables..."
 	@for i in $(EXEC); do \
-	$(CC) -o $$i $$i.o $(OBJECTS) $(CCLIBS); \
+	$(CC) -o $$i $$i.o $(OBJECTS) $(CCLIBS) $(CCFLAGS); \
 	done
 	@echo "Done."
 
@@ -47,23 +49,25 @@ debug: CCFLAGS = $(CCFLAGS_STD) $(CCFLAGS_DEBUG)
 debug: all
 
 #
-# DEFAULT RULES (must not change it)
+# DEFAULT RULES
 #
 
-%.o : %.c
+%.o : %.cpp
 	@cd $(dir $<) && ${CC} ${CCFLAGS} -c $(notdir $<) -o $(notdir $@)
 
+
+
 #
-# MAIN RULES (must not change it)
+# GENERAL RULES
 #
 
-# You can add your own commands
 clean:
 	@echo "Delete objects, temporary files..."
 	@rm -f $(OBJECTS) $(EXEC_O)
 	@rm -f *~ *#
 	@rm -f $(EXEC)
 	@rm -f dependancies
+	@rm -f *~ *# *.d
 	@echo "Done."
 
 depend:
@@ -71,14 +75,14 @@ depend:
 	@sed -e "/^# DEPENDANCIES/,$$ d" makefile > dependancies
 	@echo "# DEPENDANCIES" >> dependancies
 	@for i in $(OBJECTS_O); do \
-	$(CC) -MM -MT $$i $(CCFLAGS) `echo $$i | sed "s/\(.*\)\\.o$$/\1.c/"` >> dependancies; \
+	$(CC) -MM -MT $$i $(CCFLAGS) `echo $$i | sed "s/\(.*\)\\.o$$/\1.cpp/"` >> dependancies; \
 	done
 	@cat dependancies > makefile
 	@rm dependancies
 	@echo "Done."
 
 #
-# CREATE ARCHIVE (must not modify)
+# CREATE ARCHIVE
 #
 
 ARCHIVE_FILES = *
@@ -89,5 +93,5 @@ archive: clean
 	@echo "Done."
 
 # DEPENDANCIES
-functions.o: functions.c functions.h
-lifeGame.o: lifeGame.c functions.h
+utiles.o: utiles.cpp includes/librairies.h includes/utiles.h
+main.o: main.cpp includes/librairies.h includes/utiles.h
