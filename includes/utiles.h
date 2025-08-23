@@ -14,6 +14,7 @@
 // Textures
 #define TEXTURE_BACKGROUND REP_BACKGROUND "bg_bleu.bmp"
 #define TEXTURE_BACKGROUND_LOAD REP_BACKGROUND "bg_bleu_chargement.bmp"
+#define TEXTURE_BACKGROUND_SETTINGS REP_BACKGROUND "bg_settings.bmp"
 #define TEXTURE_CELL REP_IMAGES "cellule_vide.bmp"
 
 
@@ -21,6 +22,7 @@
 // Polices d'écriture
 #define REP_POLICES REP_MISC "polices/"
 #define POLICE_ARIAL REP_POLICES "arial.ttf"
+#define POLICE_IMPACT REP_POLICES "impact.ttf"
 
 enum Police_size {
     H0 = 40,
@@ -74,6 +76,7 @@ class Window {
         TTF_Font* font;
 
         int nb_frames;
+        bool settings_open;
 
         
 
