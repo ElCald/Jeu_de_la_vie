@@ -23,7 +23,14 @@ Le jeu fonctionne sous forme de génération, à chaque fois que l'on en passe u
 - `Flèche haut` : accélère le temps
 - `Flèche bas` : ralentit le temps
 - `Echape` : quitte l'application
+- 
 ----------
+
+**Téléchargement Windows** [LifeGame 1.0](https://github.com/ElCald/Jeu_de_la_vie/releases/download/1.0/LifeGame_x86_64_1.0.zip)
+
+---------
+
+
 ### Compilation & exécution
 #### Version Linux (debug)
 ```
