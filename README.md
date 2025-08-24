@@ -1,4 +1,4 @@
-# Jeu de la vie (lifegame)
+# Jeu de la vie (Game of Life)
 
 Automate cellulaire crée par [John Conway](https://fr.wikipedia.org/wiki/Jeu_de_la_vie).
 
