@@ -3,3 +3,4 @@
 *.exe
 /build_debug
 /build_release
+/autre
