@@ -29,7 +29,7 @@ Le jeu fonctionne sous forme de génération, à chaque fois que l'on en passe u
 
 ----------
 
-**Téléchargement Windows** [LifeGame 1.0](https://github.com/ElCald/Jeu_de_la_vie/releases/download/1.1/LifeGame_x86_64_1.1.zip)
+**Téléchargement Windows** [LifeGame 1.1](https://github.com/ElCald/Jeu_de_la_vie/releases/download/1.1/LifeGame_x86_64_1.1.zip)
 
 ---------
 
