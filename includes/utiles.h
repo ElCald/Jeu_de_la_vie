@@ -12,9 +12,13 @@
 
 
 // Textures
-#define TEXTURE_BACKGROUND REP_BACKGROUND "bg_bleu.bmp"
+#define TEXTURE_BACKGROUND_DEFAULT REP_BACKGROUND "bg_bleu.bmp"
+#define TEXTURE_BACKGROUND_DARK REP_BACKGROUND "bg_sombre.bmp"
+#define TEXTURE_BACKGROUND_LIGHT REP_BACKGROUND "bg_clair.bmp"
 #define TEXTURE_BACKGROUND_LOAD REP_BACKGROUND "bg_bleu_chargement.bmp"
-#define TEXTURE_BACKGROUND_SETTINGS REP_BACKGROUND "bg_settings.bmp"
+
+#define TEXTURE_BACKGROUND_SETTINGS_0 REP_BACKGROUND "bg_settings.bmp"
+
 #define TEXTURE_CELL REP_IMAGES "cellule_vide.bmp"
 
 
@@ -48,6 +52,7 @@ enum Police_size {
 
 
 enum type_objet {DEFAULT_OBJET};
+enum theme {DEFAULT, DARK, LIGHT};
 
 
 using namespace std;
@@ -69,16 +74,17 @@ class Window {
         SDL_Window* fenetre;
         SDL_Renderer* renderer;
 
-        Camera* cam;
+        bool mouseLeftDown;
+        bool mouseRightDown;
+
+        
 
         SDL_bool program_launched; // True si la fenêtre est ouverte
         SDL_Event event; // Evènements de la fenêtre
         TTF_Font* font;
 
-        int nb_frames;
         bool settings_open;
 
-        
 
         vector<Objet*> objets_scene; // Emplacement des objets de la scène
 
@@ -88,27 +94,50 @@ class Window {
 
 
     private:
+
+        Camera* cam;
+
+        int nb_frames;
+
         int win_width;
         int win_height;
+        int center_width;
+        int center_height;  
 
-        int center_win_width;
-        int center_win_height;
         bool animationEnable;
         bool visibleTextZones;
 
         int delay_animation;
-        
+
+        theme default_color;
+
+        SDL_Color text_color;
+
+        bool displayGrid;
+
+        bool dragging;
+        int lastMouseX;
+        int lastMouseY;
+
+        int page_settings;
+
+
         
 
         Texture* texture_background; // Images de la scène
 
         vector<Texture*> texture_scene; // Images de la scène
+        vector<Texture*> textures_background; // Images de fond
+
+        vector<Texture*> textures_settings; // Images de fond
 
         
 
         void addText(const string& text, int x, int y, SDL_Color color);   
         void renderTexts();
         SDL_Rect* worldToScreen(SDL_Rect* obj);
+        void apply_color();
+        void drawGrid();
 
 
 
@@ -119,17 +148,26 @@ class Window {
         
 
         void addTextureScene(Texture* texture);
+        void addTextureSettings(Texture* texture);
+
+        void addTextureBackground(Texture* texture);
         void setTextureBackground(Texture* texture);
         void addObjet(Objet* obj);
 
         void cleanTextureScene();
 
-        int get_center_win_width();
-        int get_center_win_height();
+        int get_width();
+        int get_height();
+
+        void refresh_window();
+
+        int get_center_width();
+        int get_center_height();
  
         void updateText(size_t index, const string& newText);
-
+        void moveText(int num, const int x, const int y);
         void addTextZones(int num, const int x, const int y);
+
 
         void showTextZones();
         void hideTextZones();
@@ -138,10 +176,24 @@ class Window {
         void disableAnimations();
         void toggleAnimations();
 
+        void showGrid();
+        void hideGrid();
+        void toggleGrid();
+
         void speedupAnimations();
         void lowdownAnimations();
 
-        void handleCameraEvents(bool& dragging, int& lastMouseX, int& lastMouseY);
+        void handleCameraEvents();
+        SDL_Rect getMouseClick();
+
+        void change_theme(int t);
+
+        int get_nb_frames();
+        void reset_frame();
+
+        int get_nb_theme();
+
+        void swap_page_settings();
         
 };
 
@@ -170,6 +222,11 @@ class TextElement {
         void addX(int _x);
         void addY(int _y);
 
+        void setX(int _x);
+        void setY(int _y);
+
+        void setColor(SDL_Color c);
+
         bool visible;
 
     private:
@@ -180,7 +237,6 @@ class TextElement {
         SDL_Color color;
         
         
-
         void updateTexture(SDL_Renderer* renderer);
 };
 

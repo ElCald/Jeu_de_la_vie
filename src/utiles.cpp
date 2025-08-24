@@ -13,7 +13,10 @@
  * @param _win_width Largeur de la fenêtre
  * @param _win_height Hauteur de la fenêtre
  */
-Window::Window(const size_t _win_width, const size_t _win_height) : nb_frames(0), settings_open(false), win_width(_win_width), win_height(_win_height), animationEnable(false), visibleTextZones(false), delay_animation(FRAME_DELAY_ANIMATION) {
+Window::Window(const size_t _win_width, const size_t _win_height) : nb_frames(0), settings_open(false), win_width(_win_width), win_height(_win_height), 
+                                                                    animationEnable(false), visibleTextZones(false), delay_animation(FRAME_DELAY_ANIMATION), 
+                                                                    default_color(DARK), displayGrid(false), dragging(false), lastMouseX(0), lastMouseY(0),
+                                                                    mouseLeftDown(false), mouseRightDown(false), page_settings(0) {
 
     #ifdef _DEBUG_
     SDL_version v;
@@ -33,7 +36,7 @@ Window::Window(const size_t _win_width, const size_t _win_height) : nb_frames(0)
         SDL_WINDOWPOS_CENTERED,
         win_width,
         win_height,
-        SDL_WINDOW_SHOWN
+        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE /*| SDL_WINDOW_FULLSCREEN_DESKTOP*/
     );
 
     renderer = SDL_CreateRenderer(
@@ -54,10 +57,12 @@ Window::Window(const size_t _win_width, const size_t _win_height) : nb_frames(0)
         ExitWithError("Erreur TTF_OpenFont");
     
 
-    center_win_width = win_width/2;
-    center_win_height = win_height/2;
+    center_width = win_width/2;
+    center_height = win_height/2;
 
     cam = new Camera(0, 0, 1.0f);
+
+    text_color = {255,255,255,255};
 
     #ifdef _DEBUG_
     cout << "Fenêtre crée" << endl;
@@ -96,14 +101,6 @@ void Window::ExitWithError(string msg){
 }
 
 
-int Window::get_center_win_width(){
-    return center_win_width;
-}
-
-int Window::get_center_win_height(){
-    return center_win_height;
-}
-
 
 /**
  * Rendu des images de la fenêtre
@@ -111,18 +108,21 @@ int Window::get_center_win_height(){
 void Window::render(){
     SDL_RenderClear(renderer);
 
-    // Rendu du fond
-    if( (SDL_RenderCopy(renderer, texture_background->texture, NULL, texture_background->position)) != 0 )
-        ExitWithError("Erreur affichage image dans le rendu");
-
-
-    #ifdef _DEBUG_
-        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 128);
-        SDL_RenderDrawRect(renderer, t->position);
-    #endif
-
-
     if(!settings_open){
+
+        // Rendu du fond
+        if( (SDL_RenderCopy(renderer, texture_background->texture, NULL, texture_background->position)) != 0 )
+            ExitWithError("Erreur affichage image dans le rendu");
+
+
+        #ifdef _DEBUG_
+            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 128);
+            SDL_RenderDrawRect(renderer, t->position);
+        #endif
+
+        if(displayGrid && cam->zoom > 0.9f)
+            drawGrid();
+
 
         // Rendu des éléments de scène
         for(Texture* t : texture_scene){
@@ -141,7 +141,7 @@ void Window::render(){
 
 
         // rendu de mes cellules
-        SDL_SetRenderDrawColor(renderer, 255, 58, 48, 255);  // rouge
+        apply_color();
         
         for(const auto& c : chunks){
 
@@ -157,14 +157,25 @@ void Window::render(){
             SDL_RenderFillRect(renderer, new_cell);
         }
 
-
-
+        
         #ifdef _DEBUG_
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         #endif
         
-        renderTexts(); // affichage du texte
+        renderTexts(); // affichage du texte  
 
+    }
+    else{
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        if(!textures_settings.empty()){
+            if( (SDL_RenderCopy(renderer, texture_background->texture, NULL, texture_background->position)) != 0 )
+                ExitWithError("Erreur affichage image dans le rendu");
+
+            if( (SDL_RenderCopy(renderer, textures_settings.at(page_settings)->texture, NULL, textures_settings.at(page_settings)->position)) != 0 )
+                ExitWithError("Erreur affichage image dans le rendu");
+        }
+            
     }
 
 
@@ -211,7 +222,7 @@ SDL_Rect* Window::worldToScreen(SDL_Rect* obj) {
 
 
 
-void Window::handleCameraEvents(bool& dragging, int& lastMouseX, int& lastMouseY) {
+void Window::handleCameraEvents() {
     switch (event.type) {
         case SDL_MOUSEWHEEL: {
             // zoom in / out
@@ -259,6 +270,119 @@ void Window::handleCameraEvents(bool& dragging, int& lastMouseX, int& lastMouseY
 }
 
 
+/**
+ * Permet d'obtenir les coordonnées de la souris selon la caméra et la taille des cases du quadriage
+ * 
+ * @return Position en X et Y
+ */
+SDL_Rect Window::getMouseClick(){
+    
+    int mx = 0;
+    int my = 0;
+    int cellX;
+    int cellY;
+    double worldX;
+    double worldY;
+
+    SDL_Rect pos;
+    pos.x = 0;
+    pos.y = 0;
+    pos.w = 0;
+    pos.h = 0;
+
+
+    
+    mx = event.button.x;
+    my = event.button.y;
+
+    worldX = (mx - center_width) / cam->zoom + cam->x;
+    worldY = (my - center_height) / cam->zoom + cam->y;
+
+    cellX = static_cast<int>(worldX / SIZE_CELL);
+    cellY = static_cast<int>(worldY / SIZE_CELL);
+
+
+    // Recalibrage dans les zones négatives
+    if(worldX < 0) 
+        cellX-=1;
+    
+    if(worldY < 0) 
+        cellY-=1;
+
+    pos.x = cellX;
+    pos.y = cellY;
+    
+
+
+    return pos;
+}
+
+
+void Window::change_theme(int t){
+    switch(t){
+        case DEFAULT:
+            setTextureBackground(textures_background.at(0));
+            default_color = DEFAULT;
+            break;
+
+        case LIGHT:
+            setTextureBackground(textures_background.at(1));
+            default_color = LIGHT;
+            break;
+
+        case DARK:
+            setTextureBackground(textures_background.at(2));
+            default_color = DARK;
+            break;
+
+        default:
+            setTextureBackground(textures_background.at(0));
+            default_color = DEFAULT;
+            break;
+    }
+}
+
+void Window::apply_color(){
+    switch(default_color){
+        case DEFAULT:
+            SDL_SetRenderDrawColor(renderer, 255, 58, 48, 255);  // rouge
+            text_color = {255, 58, 48, 255};
+            break;
+
+        case LIGHT:
+            SDL_SetRenderDrawColor(renderer, 48, 48, 48, 255);  // Noir
+            text_color = {48, 48, 48, 255};
+            break;
+
+        case DARK:
+            SDL_SetRenderDrawColor(renderer, 254, 254, 226, 255);  // Blanc
+            text_color = {254, 254, 226, 255};
+            break;
+    }
+}
+
+
+void Window::showGrid(){
+    displayGrid = true;
+}
+
+void Window::hideGrid(){
+    displayGrid = false;
+}
+
+void Window::toggleGrid(){
+    displayGrid = !displayGrid;
+}
+
+
+int Window::get_nb_theme(){
+    return textures_background.size();
+}
+
+
+void Window::addTextureBackground(Texture* texture){
+    textures_background.push_back(texture);
+}
 
 /**
  * Ajout d'une texture à la scène
@@ -266,6 +390,16 @@ void Window::handleCameraEvents(bool& dragging, int& lastMouseX, int& lastMouseY
 void Window::addTextureScene(Texture* texture){
     texture_scene.push_back(texture);
 }
+
+
+/**
+ * Ajout d'une texture à la scène
+ */
+void Window::addTextureSettings(Texture* texture){
+    textures_settings.push_back(texture);
+}
+
+
 
 
 
@@ -299,15 +433,30 @@ void Window::updateText(size_t index, const string& newText) {
 }
 
 
+
+void Window::moveText(int num, const int x, const int y){
+     if (num < texts.size())
+        texts[num]->setX(x);
+        texts[num]->setY(y);
+}
+
+
 void Window::renderTexts() {
     
     for(size_t i=0; i<texts.size(); i++){
+        texts[i]->setColor(text_color);
+
         if(i==0 && visibleTextZones)
             texts[i]->render(renderer);
         else if(i!=0)
             texts[i]->render(renderer);
     }
         
+}
+
+
+void Window::swap_page_settings(){
+    page_settings = (page_settings+1 >= textures_settings.size()) ? 0 : page_settings+1;
 }
 
 
@@ -369,10 +518,48 @@ void Window::addObjet(Objet* obj){
 }
 
 
+int Window::get_width(){
+    return win_width;
+}
+
+int Window::get_height(){
+    return win_height;
+}
+
+int Window::get_center_width(){
+    return center_width;
+}
+
+int Window::get_center_height(){
+    return center_height;
+}
+
+/**
+ * Met à jours les données concernant les dimensions de la fenêtre
+ */
+void Window::refresh_window(){
+    SDL_GetWindowSize(fenetre, &win_width, &win_height);
+    center_width = win_width/2;
+    center_height = win_height/2;
+
+    for(auto& t : textures_background){
+        t->setSize(win_width, win_height);
+    }
+
+    for(auto& t : textures_settings){
+        t->setPlace(win_width/2-WIN_WIDTH/2, win_height/2-WIN_HEIGHT/2);
+    }
+}
 
 
+int Window::get_nb_frames(){
+    return nb_frames;
+}
 
 
+void Window::reset_frame(){
+    nb_frames = 0;
+}
 
 /// Camera
 Camera::Camera(double _x, double _y, double _zoom) : x(_x), y(_y), zoom(_zoom) {}
@@ -410,6 +597,7 @@ void TextElement::setText(const string& newText) {
 }
 
 void TextElement::updateTexture(SDL_Renderer* renderer) {
+
     SDL_Surface* surface = TTF_RenderText_Blended(font, currentText.c_str(), color);
     if (!surface) return;
 
@@ -420,13 +608,15 @@ void TextElement::updateTexture(SDL_Renderer* renderer) {
 }
 
 void TextElement::render(SDL_Renderer* renderer) {
-    if (!texture)
-        updateTexture(renderer);
 
-    if (texture)
-        SDL_RenderCopy(renderer, texture, nullptr, &rect);
+    updateTexture(renderer);
+    SDL_RenderCopy(renderer, texture, nullptr, &rect);
 }
 
+
+void TextElement::setColor(SDL_Color c){
+    color = c;
+}
 
 void TextElement::addX(int _x){
     rect.x += _x;
@@ -437,6 +627,15 @@ void TextElement::addY(int _y){
     rect.y += _y;
 }
 
+
+void TextElement::setX(int _x){
+    rect.x = _x;
+}
+
+
+void TextElement::setY(int _y){
+    rect.y = _y;
+}
 
 
 
@@ -653,4 +852,34 @@ void update_grid(set<pair<int,int>>& chunks){
     } // fin chunks
 
     chunks = new_chunks;
+}
+
+
+
+void Window::drawGrid() {
+    SDL_SetRenderDrawColor(renderer, 80, 80, 80, 255);
+
+    // Monde visible
+    float worldLeft   = cam->x - (win_width / 2.0f) / cam->zoom;
+    float worldRight  = cam->x + (win_width / 2.0f) / cam->zoom;
+    float worldTop    = cam->y - (win_height / 2.0f) / cam->zoom;
+    float worldBottom = cam->y + (win_height / 2.0f) / cam->zoom;
+
+    // Alignement sur la grille
+    int startX = (int)floor(worldLeft / SIZE_CELL) * SIZE_CELL;
+    int endX   = (int)ceil(worldRight / SIZE_CELL) * SIZE_CELL;
+    int startY = (int)floor(worldTop / SIZE_CELL) * SIZE_CELL;
+    int endY   = (int)ceil(worldBottom / SIZE_CELL) * SIZE_CELL;
+
+    // Lignes verticales
+    for (int x = startX; x <= endX; x += SIZE_CELL) {
+        int screenX = (x - cam->x) * cam->zoom + win_width / 2;
+        SDL_RenderDrawLine(renderer, screenX, 0, screenX, win_height);
+    }
+
+    // Lignes horizontales
+    for (int y = startY; y <= endY; y += SIZE_CELL) {
+        int screenY = (y - cam->y) * cam->zoom + win_height / 2;
+        SDL_RenderDrawLine(renderer, 0, screenY, win_width, screenY);
+    }
 }

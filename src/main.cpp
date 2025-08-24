@@ -7,22 +7,15 @@ using namespace std;
 int Objet::compteur_id = 0;
 
 int main(int argc, char* argv[]){
-
      
 
     Uint32 frameStart;
     int frameTime;
 
-    int mx = 0;
-    int my = 0;
-    int cellX;
-    int cellY;
-    double worldX;
-    double worldY;
+    SDL_Rect mouseClick;
+    int theme_value = DARK;
 
-
-    bool dragging = false;
-    int lastMouseX = 0, lastMouseY = 0;
+    bool erase_mode = false;
 
 
 
@@ -32,16 +25,25 @@ int main(int argc, char* argv[]){
     Window window(WIN_WIDTH, WIN_HEIGHT);
 
     // Écran de chargement
-    Texture background_load(window, string(TEXTURE_BACKGROUND_LOAD), WIN_WIDTH, WIN_HEIGHT, 0, 0);
+    Texture background_load(window, string(TEXTURE_BACKGROUND_LOAD), window.get_width(), window.get_height(), 0, 0);
     window.setTextureBackground(&background_load);
     window.render();
 
 
-    Texture background(window, string(TEXTURE_BACKGROUND), WIN_WIDTH, WIN_HEIGHT, 0, 0);
-    window.setTextureBackground(&background);
+    Texture background_default(window, string(TEXTURE_BACKGROUND_DEFAULT), window.get_width(), window.get_height(), 0, 0);
+    Texture background_light(window, string(TEXTURE_BACKGROUND_LIGHT), window.get_width(), window.get_height(), 0, 0);
+    Texture background_dark(window, string(TEXTURE_BACKGROUND_DARK), window.get_width(), window.get_height(), 0, 0);
+
+    window.addTextureBackground(&background_default);
+    window.addTextureBackground(&background_light);
+    window.addTextureBackground(&background_dark);
+
+    window.setTextureBackground(&background_dark);
 
 
-    Texture background_settings(window, string(TEXTURE_BACKGROUND_SETTINGS), WIN_WIDTH, WIN_HEIGHT, 0, 0); // chargement de l'écran des controles
+    Texture background_settings_0(window, string(TEXTURE_BACKGROUND_SETTINGS_0), window.get_width(), window.get_height(), 0, 0);
+    window.addTextureSettings(&background_settings_0);
+
 
 
     window.chunks.insert({0,0});
@@ -49,24 +51,24 @@ int main(int argc, char* argv[]){
     window.chunks.insert({0,1});
 
 
-    window.addTextZones(1, WIN_WIDTH-80+10, (H4/2)+10); // nombre de frame écoulées
-    window.updateText(0, "" + to_string(window.nb_frames));
+    window.addTextZones(1, window.get_width()-80+10, (H4/2)+10); // nombre de frame écoulées
+    window.updateText(0, "" + to_string(window.get_nb_frames()));
     window.showTextZones();
+
+    window.showGrid();
 
 
     window.render();
-
-
-
 
 
     while(window.program_launched){
 
         frameStart = SDL_GetTicks(); // Temps au début de la frame
 
+
         while(SDL_PollEvent(&window.event)){
 
-            window.handleCameraEvents(dragging, lastMouseX, lastMouseY);
+            window.handleCameraEvents();
 
             switch(window.event.type){
            
@@ -79,7 +81,7 @@ int main(int argc, char* argv[]){
 
                         case SDLK_TAB: 
                             window.settings_open = true;
-                            window.setTextureBackground(&background_settings);
+                            window.swap_page_settings();
                             break;
 
                         case SDLK_SPACE:
@@ -88,7 +90,15 @@ int main(int argc, char* argv[]){
 
                         case SDLK_c:
                             window.chunks.clear();
-                            window.nb_frames = 0;
+                            window.reset_frame();
+                            break;
+
+                        case SDLK_e:
+                            erase_mode = !erase_mode;
+                            break;
+
+                        case SDLK_g:
+                            window.toggleGrid();
                             break;
 
                         case SDLK_UP: 
@@ -98,57 +108,74 @@ int main(int argc, char* argv[]){
                         case SDLK_DOWN: 
                             window.lowdownAnimations();
                             break;
+
+                        case SDLK_t:
+
+                            theme_value = (theme_value < window.get_nb_theme()) ? theme_value+1 : 0;
+                            window.change_theme(theme_value);
+                            
+                            break;
                 
 
                         default:
                             continue;
                     }
                     
-                    break;
-
+                    break;     
+                    
                 case SDL_KEYUP:
-
                     switch (window.event.key.keysym.sym) {
                         case SDLK_TAB: 
                             window.settings_open = false;
-                            window.setTextureBackground(&background);
                             break;
-                    }
+                    }   
                     break;
-                    
 
 
                 case SDL_MOUSEBUTTONDOWN:
-                    if (window.event.button.button == SDL_BUTTON_LEFT) {
-                        mx = window.event.button.x;
-                        my = window.event.button.y;
 
-                        worldX = (mx - WIN_WIDTH / 2) / window.cam->zoom + window.cam->x;
-                        worldY = (my - WIN_HEIGHT / 2) / window.cam->zoom + window.cam->y;
+                    switch(window.event.button.button) {
+                        case SDL_BUTTON_LEFT:
+                            window.mouseLeftDown = true;
+                            
+                            mouseClick = window.getMouseClick();
 
-                        cellX = static_cast<int>(worldX / SIZE_CELL);
-                        cellY = static_cast<int>(worldY / SIZE_CELL);
-
-             
-                        // Recalibrage dans les zones négatives
-                        if(worldX < 0) 
-                            cellX-=1;
-                        
-                        if(worldY < 0) 
-                            cellY-=1;
-
-
-                        if(window.chunks.count({cellX,cellY})){
-                            window.chunks.erase({cellX,cellY});
-                        }
-                        else{
-                            window.chunks.insert({cellX,cellY});
-                        }
+                            if(erase_mode && window.chunks.count({mouseClick.x,mouseClick.y})){
+                                window.chunks.erase({mouseClick.x,mouseClick.y});
+                            }
+                            else{
+                                if(!erase_mode)
+                                    window.chunks.insert({mouseClick.x,mouseClick.y});
+                            }
+                            
+                            break;
                     }
-
-                    
                     break;
 
+                case SDL_MOUSEBUTTONUP:
+
+                    switch(window.event.button.button) {
+                        case SDL_BUTTON_LEFT:
+                            window.mouseLeftDown = false;
+                            break;
+                    }
+                    break;
+
+                case SDL_MOUSEMOTION :
+                    if(window.mouseLeftDown){
+                        mouseClick = window.getMouseClick();
+
+                        if(erase_mode && window.chunks.count({mouseClick.x,mouseClick.y})){
+                            window.chunks.erase({mouseClick.x,mouseClick.y});
+                        }
+                        else{
+                            if(!erase_mode)
+                                window.chunks.insert({mouseClick.x,mouseClick.y});
+                        }
+
+                    }
+                    
+                    break;
               
                 case SDL_QUIT: // clique sur la croix de la fenêtre
                     window.program_launched = SDL_FALSE; break;
@@ -159,11 +186,14 @@ int main(int argc, char* argv[]){
 
         }//fin boucle event
 
+        window.refresh_window();
 
+
+        window.moveText(0, window.get_width()-80+10, (H4/2)+10);
 
         last_update = window.animate(last_update);
 
-        window.updateText(0, "" + to_string(window.nb_frames));
+        window.updateText(0, "" + to_string(window.get_nb_frames()));
 
         window.render();
 

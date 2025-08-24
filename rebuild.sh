@@ -5,7 +5,7 @@ export XDG_RUNTIME_DIR="/tmp/runtime-$USER"
 
 BUILD_LINUX="build_debug"
 BUILD_WIN="build_release"
-VERSION="1.0"
+VERSION="1.1"
 
 if [ "$1" == "windows" ]; then
     echo "Compilation Windows"
