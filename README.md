@@ -9,8 +9,8 @@ Automate cellulaire crée par [John Conway](https://fr.wikipedia.org/wiki/Jeu_de
 ---------
 
 ### Règles 
-1- Si une cellule à exactement 3 voisines, elle vie.<br>
-2- Si une cellule à strictement moins de 2 ou plus 3 voisines, elle meurt.
+1- Si une cellule a exactement 3 voisines, elle vie.<br>
+2- Si une cellule a strictement moins de 2 ou plus 3 voisines, elle meurt.
 
 ### Fonctionnement
 Le jeu fonctionne sous forme de génération, à chaque fois que l'on en passe une, le programme applique les règles sur les différentes cellules. On peut voir le nombre de générations écoulées en haut à droite de l'écran.
