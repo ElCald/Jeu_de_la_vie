@@ -2,6 +2,12 @@
 
 Automate cellulaire crée par [John Conway](https://fr.wikipedia.org/wiki/Jeu_de_la_vie).
 
+----------
+
+**Téléchargement Windows** [LifeGame 1.1](https://github.com/ElCald/Jeu_de_la_vie/releases/download/1.1/LifeGame_x86_64_1.1.zip)
+
+---------
+
 ### Règles 
 1- Si une cellule à exactement 3 voisines, elle vie.<br>
 2- Si une cellule à strictement moins de 2 ou plus 3 voisines, elle meurt.
@@ -28,10 +34,6 @@ Le jeu fonctionne sous forme de génération, à chaque fois que l'on en passe u
 - `E` : activer / désactiver mode effaceur
 
 ----------
-
-**Téléchargement Windows** [LifeGame 1.1](https://github.com/ElCald/Jeu_de_la_vie/releases/download/1.1/LifeGame_x86_64_1.1.zip)
-
----------
 
 
 ### Compilation & exécution
