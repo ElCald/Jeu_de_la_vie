@@ -16,7 +16,8 @@
 Window::Window(const size_t _win_width, const size_t _win_height) : nb_frames(0), settings_open(false), win_width(_win_width), win_height(_win_height), 
                                                                     animationEnable(false), visibleTextZones(false), delay_animation(FRAME_DELAY_ANIMATION), 
                                                                     default_color(DARK), displayGrid(false), dragging(false), lastMouseX(0), lastMouseY(0),
-                                                                    mouseLeftDown(false), mouseRightDown(false), page_settings(0) {
+                                                                    mouseLeftDown(false), mouseRightDown(false), page_settings(0), select_mode(false), 
+                                                                    currentX(0), currentY(0) {
 
     #ifdef _DEBUG_
     SDL_version v;
@@ -63,6 +64,8 @@ Window::Window(const size_t _win_width, const size_t _win_height) : nb_frames(0)
     cam = new Camera(0, 0, 1.0f);
 
     text_color = {255,255,255,255};
+
+    zone_selection = {0,0,0,0};
 
     #ifdef _DEBUG_
     cout << "Fenêtre crée" << endl;
@@ -155,6 +158,12 @@ void Window::render(){
 
 
             SDL_RenderFillRect(renderer, new_cell);
+        }
+
+
+        if(select_mode){
+            SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+            SDL_RenderDrawRect(renderer, &zone_selection);
         }
 
         
@@ -290,8 +299,6 @@ SDL_Rect Window::getMouseClick(){
     pos.w = 0;
     pos.h = 0;
 
-
-    
     mx = event.button.x;
     my = event.button.y;
 
@@ -316,6 +323,115 @@ SDL_Rect Window::getMouseClick(){
 
     return pos;
 }
+
+
+
+void Window::select_zone(){
+
+    int mx, my;
+    double worldX, worldY;
+    int startCellX, startCellY;
+    int endCellX, endCellY;
+    int minX, maxX, minY, maxY;
+
+    switch(event.type){
+        case SDL_MOUSEBUTTONDOWN:
+            switch(event.button.button){
+                case SDL_BUTTON_LEFT:
+                    // mx = event.button.x;
+                    // my = event.button.y;
+                    // worldX = (mx - win_width/2) / cam->zoom + cam->x;
+                    // worldY = (my - win_height/2) / cam->zoom + cam->y;
+                    // startCellX = static_cast<int>(worldX / SIZE_CELL);
+                    // startCellY = static_cast<int>(worldY / SIZE_CELL);
+                    // endCellX = startCellX;
+                    // endCellY = startCellY;
+
+                    startCellX = getMouseClick().x;
+                    startCellY = getMouseClick().y;
+
+
+                    zone_selection = {0, 0, 0, 0};
+
+                    zone_selection.x = (startCellX * SIZE_CELL - cam->x) * cam->zoom + win_width/2;
+                    zone_selection.y = (startCellY * SIZE_CELL - cam->y) * cam->zoom + win_height/2;
+
+                    break;
+            }
+
+            break;
+
+        case SDL_MOUSEMOTION:
+            switch(event.button.button){
+                case SDL_BUTTON_LEFT:
+                    // mx = event.motion.x;
+                    // my = event.motion.y;
+                    // worldX = (mx - win_width/2) / cam->zoom + cam->x;
+                    // worldY = (my - win_height/2) / cam->zoom + cam->y;
+                    // endCellX = static_cast<int>(worldX / SIZE_CELL);
+                    // endCellY = static_cast<int>(worldY / SIZE_CELL);
+
+                    // // zone_selection.x = std::min(startCellX, endCellX);
+                    // // zone_selection.y = std::min(startCellX, endCellY);
+                    // // zone_selection.w = std::abs(endCellX - startCellX);
+                    // // zone_selection.h = std::abs(endCellY - startCellX);
+
+                    // // minX = std::min(startCellX, endCellX);
+                    // // minY = std::min(startCellY, endCellY);
+                    // // maxX = std::abs(endCellX - startCellX);
+                    // // maxY = std::abs(endCellY - startCellY);
+
+                    // minX = startCellX;
+                    // minY = startCellY;
+                    // maxX = std::abs(endCellX - startCellX);
+                    // maxY = std::abs(endCellY - startCellY);
+
+                    // zone_selection.x = (minX * SIZE_CELL - cam->x) * cam->zoom + win_width/2;
+                    // zone_selection.y = (minY * SIZE_CELL - cam->y) * cam->zoom + win_height/2;
+                    // zone_selection.w = (maxX - minX + 1) * SIZE_CELL * cam->zoom;
+                    // zone_selection.h = (maxY - minY + 1) * SIZE_CELL * cam->zoom;
+
+                    endCellX = getMouseClick().x;
+                    endCellY = getMouseClick().y;
+
+
+                    zone_selection.x = (startCellX * SIZE_CELL - cam->x) * cam->zoom + win_width/2;
+                    zone_selection.y = (startCellY * SIZE_CELL - cam->y) * cam->zoom + win_height/2;
+                    zone_selection.w = (endCellX - startCellX + 1) * SIZE_CELL * cam->zoom;
+                    zone_selection.h = (endCellY - startCellY + 1) * SIZE_CELL * cam->zoom;
+                    
+
+            }
+            break;
+
+
+        case SDL_MOUSEBUTTONUP:
+            // switch(event.button.button){
+            //     case SDL_BUTTON_LEFT:
+            //         minX = std::min(startCellX, endCellX);
+            //         maxX = std::max(startCellX, endCellX);
+            //         minY = std::min(startCellY, endCellY);
+            //         maxY = std::max(startCellY, endCellY);
+
+            //         break;
+            // }
+            break;
+
+    }   
+
+    // minX = std::min(startCellX, endCellX);
+    // maxX = std::max(startCellX, endCellX);
+    // minY = std::min(startCellY, endCellY);
+    // maxY = std::max(startCellY, endCellY);
+
+    // zone_selection.x = (minX * SIZE_CELL - cam->x) * cam->zoom + win_width/2;
+    // zone_selection.y = (minY * SIZE_CELL - cam->y) * cam->zoom + win_height/2;
+    // zone_selection.w = (maxX - minX + 1) * SIZE_CELL * cam->zoom;
+    // zone_selection.h = (maxY - minY + 1) * SIZE_CELL * cam->zoom;
+    
+}
+
+
 
 
 void Window::change_theme(int t){

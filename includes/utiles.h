@@ -76,6 +76,8 @@ class Window {
 
         bool mouseLeftDown;
         bool mouseRightDown;
+        int currentX;
+        int currentY;
 
         
 
@@ -84,6 +86,12 @@ class Window {
         TTF_Font* font;
 
         bool settings_open;
+        bool select_mode;
+
+        
+        SDL_Rect zone_selection;
+
+        
 
 
         vector<Objet*> objets_scene; // Emplacement des objets de la scène
@@ -120,7 +128,6 @@ class Window {
         int lastMouseY;
 
         int page_settings;
-
 
         
 
@@ -194,6 +201,8 @@ class Window {
         int get_nb_theme();
 
         void swap_page_settings();
+
+        void select_zone();
         
 };
 

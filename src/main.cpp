@@ -2,6 +2,7 @@
 #include "utiles.h"
 
 
+
 using namespace std;
 
 int Objet::compteur_id = 0;
@@ -16,7 +17,6 @@ int main(int argc, char* argv[]){
     int theme_value = DARK;
 
     bool erase_mode = false;
-
 
 
     Uint32 last_update = SDL_GetTicks();
@@ -69,6 +69,8 @@ int main(int argc, char* argv[]){
         while(SDL_PollEvent(&window.event)){
 
             window.handleCameraEvents();
+            // if(window.select_mode) 
+            //     window.select_zone();
 
             switch(window.event.type){
            
@@ -95,6 +97,13 @@ int main(int argc, char* argv[]){
 
                         case SDLK_e:
                             erase_mode = !erase_mode;
+                            window.select_mode = false;
+                            break;
+
+                        case SDLK_s:
+                            // window.select_mode = !window.select_mode;
+                            // window.zone_selection = {0,0,0,0};
+                            // erase_mode = false;
                             break;
 
                         case SDLK_g:
@@ -136,16 +145,21 @@ int main(int argc, char* argv[]){
 
                     switch(window.event.button.button) {
                         case SDL_BUTTON_LEFT:
+                            
                             window.mouseLeftDown = true;
                             
                             mouseClick = window.getMouseClick();
 
-                            if(erase_mode && window.chunks.count({mouseClick.x,mouseClick.y})){
-                                window.chunks.erase({mouseClick.x,mouseClick.y});
-                            }
-                            else{
-                                if(!erase_mode)
-                                    window.chunks.insert({mouseClick.x,mouseClick.y});
+                            if(!window.select_mode){
+
+                                if(erase_mode && window.chunks.count({mouseClick.x,mouseClick.y})){
+                                    window.chunks.erase({mouseClick.x,mouseClick.y});
+                                }
+                                else{
+                                    if(!erase_mode)
+                                        window.chunks.insert({mouseClick.x,mouseClick.y});
+                                }
+                                
                             }
                             
                             break;
@@ -162,18 +176,23 @@ int main(int argc, char* argv[]){
                     break;
 
                 case SDL_MOUSEMOTION :
+                    
                     if(window.mouseLeftDown){
                         mouseClick = window.getMouseClick();
 
-                        if(erase_mode && window.chunks.count({mouseClick.x,mouseClick.y})){
-                            window.chunks.erase({mouseClick.x,mouseClick.y});
-                        }
-                        else{
-                            if(!erase_mode)
-                                window.chunks.insert({mouseClick.x,mouseClick.y});
-                        }
+                        if(!window.select_mode){
 
+                            if(erase_mode && window.chunks.count({mouseClick.x,mouseClick.y})){
+                                window.chunks.erase({mouseClick.x,mouseClick.y});
+                            }
+                            else{
+                                if(!erase_mode)
+                                    window.chunks.insert({mouseClick.x,mouseClick.y});
+                            }
+
+                        }
                     }
+                 
                     
                     break;
               
